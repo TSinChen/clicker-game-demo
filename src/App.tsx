@@ -9,40 +9,16 @@ import {
 import { useEffect, useState } from 'react';
 import { styledStaff } from './styled';
 import dayjs from 'dayjs';
-
-const BASIC_EARN = 1;
-const LOCAL_STORAGE_KEYS = {
-	money: 'money',
-	hiredEmployeeIndexes: 'hiredEmployeeIndexes',
-	lastPlayedTime: 'lastPlayedTime',
-};
-const OFFLINE_EARN_PERCENTAGE = 0.1;
-
-const stringToNumbers = (string: string, separator = ',') =>
-	string.split(separator).map(Number);
-
-const hireEmployeeNumberPerTimeByKey = (clickedKeys: Set<string>) => {
-	if (clickedKeys.has('Control')) {
-		return 100;
-	} else if (clickedKeys.has('Shift')) {
-		return 10;
-	} else {
-		return 1;
-	}
-};
-
-type Employee = { name: string; efficiency: number; price: number };
-// 數據截自 Clicker Heroes https://clickerheroes.fandom.com/wiki/Heroes
-const EMPLOYEES: Employee[] = [
-	{ efficiency: 5, price: 50 },
-	{ efficiency: 22, price: 250 },
-	{ efficiency: 74, price: 1000 },
-	{ efficiency: 245, price: 4000 },
-	{ efficiency: 976, price: 20000 },
-	{ efficiency: 3725, price: 100000 },
-	{ efficiency: 10859, price: 400000 },
-	{ efficiency: 47143, price: 2500000 },
-].map((item, i) => ({ ...item, name: `Employee ${i + 1}` }));
+import {
+	BASIC_EARN,
+	EMPLOYEES,
+	LOCAL_STORAGE_KEYS,
+	OFFLINE_EARN_PERCENTAGE,
+} from './utils/constants';
+import {
+	hireEmployeeNumberPerTimeByKey,
+	stringToNumbers,
+} from './utils/functions';
 
 function App() {
 	const [money, setMoney] = useState(0);
@@ -93,11 +69,13 @@ function App() {
 				const diff = dayjs().diff(dayjs(storedLastPlayedTime), 'second');
 				if (diff > 10) {
 					setOfflineEarnedMoney(
-						diff *
-							getEarnedMoneyPerSecondByIndexes(
-								stringToNumbers(storedHiredEmployeeIndexes)
-							) *
-							OFFLINE_EARN_PERCENTAGE
+						Math.floor(
+							diff *
+								getEarnedMoneyPerSecondByIndexes(
+									stringToNumbers(storedHiredEmployeeIndexes)
+								) *
+								OFFLINE_EARN_PERCENTAGE
+						)
 					);
 				}
 			}
