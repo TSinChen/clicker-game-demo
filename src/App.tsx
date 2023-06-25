@@ -3,15 +3,23 @@ import { useEffect, useState } from 'react';
 import { styledStaff } from './styled';
 
 const BASIC_EARN = 1;
+const LOCAL_STORAGE_KEYS = {
+	money: 'money',
+	hiredEmployeeIndexes: 'hiredEmployeeIndexes',
+};
 
 type Employee = { name: string; efficiency: number; price: number };
+// 數據截自 Clicker Heroes https://clickerheroes.fandom.com/wiki/Heroes
 const EMPLOYEES: Employee[] = [
-	{ name: '作業員', efficiency: 5, price: 50 },
-	{ name: '初階工程師', efficiency: 10, price: 300 },
-	{ name: '中階工程師', efficiency: 30, price: 700 },
-	{ name: '高階工程師', efficiency: 60, price: 1200 },
-	{ name: '主管', efficiency: 80, price: 2000 },
-];
+	{ efficiency: 5, price: 50 },
+	{ efficiency: 22, price: 250 },
+	{ efficiency: 74, price: 1000 },
+	{ efficiency: 245, price: 4000 },
+	{ efficiency: 976, price: 20000 },
+	{ efficiency: 3725, price: 100000 },
+	{ efficiency: 10859, price: 400000 },
+	{ efficiency: 47143, price: 2500000 },
+].map((item, i) => ({ ...item, name: `Employee ${i + 1}` }));
 
 function App() {
 	const [money, setMoney] = useState(0);
@@ -27,6 +35,21 @@ function App() {
 		setMoney((prev) => prev - employee.price);
 		setHiredEmployeeIndexes((prev) => prev.concat(employeeIndex));
 	};
+
+	useEffect(() => {
+		const storedMoney = localStorage.getItem(LOCAL_STORAGE_KEYS.money);
+		const storedHiredEmployeeIndexes = localStorage.getItem(
+			LOCAL_STORAGE_KEYS.hiredEmployeeIndexes
+		);
+		if (storedMoney) {
+			setMoney(Number(storedMoney));
+		}
+		if (storedHiredEmployeeIndexes) {
+			setHiredEmployeeIndexes(
+				storedHiredEmployeeIndexes.split(',').map(Number)
+			);
+		}
+	}, []);
 
 	useEffect(() => {
 		const earn = setInterval(() => {
@@ -47,7 +70,17 @@ function App() {
 				}, 0)
 		);
 	}, [hiredEmployeeIndexes]);
+
+	useEffect(() => {
+		localStorage.setItem(LOCAL_STORAGE_KEYS.money, String(money));
+	}, [money]);
+
+	useEffect(() => {
+		localStorage.setItem(
+			LOCAL_STORAGE_KEYS.hiredEmployeeIndexes,
+			String(hiredEmployeeIndexes)
 		);
+	}, [hiredEmployeeIndexes]);
 
 	return (
 		<Box>
