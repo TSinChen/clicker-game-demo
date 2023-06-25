@@ -159,28 +159,27 @@ function App() {
 			<Box>
 				<Typography variant="h6">雇用勞工</Typography>
 				<styledStaff.StyledStaffList>
-					{EMPLOYEES.map((employee, employeeIndex) => (
-						<styledStaff.StyledStaffItem key={employee.name}>
-							<Box>{employee.name}</Box>
-							<Box>效率：{employee.efficiency}</Box>
-							<Box>價格：{employee.price}</Box>
-							<Box>
-								現有數量：
-								{
-									hiredEmployeeIndexes.filter(
-										(hiredEmployeeIndex) => hiredEmployeeIndex === employeeIndex
-									).length
-								}
-							</Box>
-							<styledStaff.StyledStaffPurchaseButton
-								variant="outlined"
-								disabled={money < employee.price * hireEmployeeNumberPerTime}
-								onClick={() => hireEmployee(employeeIndex)}
-							>
-								雇用 {hireEmployeeNumberPerTime} 位
-							</styledStaff.StyledStaffPurchaseButton>
-						</styledStaff.StyledStaffItem>
-					))}
+					{EMPLOYEES.map((employee, employeeIndex) => {
+						const quantity = hiredEmployeeIndexes.filter(
+							(hiredEmployeeIndex) => hiredEmployeeIndex === employeeIndex
+						).length;
+						return (
+							<styledStaff.StyledStaffItem key={employee.name}>
+								<Box>{employee.name}</Box>
+								<Box>效率：{employee.efficiency}</Box>
+								<Box>價格：{employee.price}</Box>
+								<Box>現有數量：{quantity}</Box>
+								<Box>每秒賺 {employee.price * quantity} 元</Box>
+								<styledStaff.StyledStaffPurchaseButton
+									variant="outlined"
+									disabled={money < employee.price * hireEmployeeNumberPerTime}
+									onClick={() => hireEmployee(employeeIndex)}
+								>
+									雇用 {hireEmployeeNumberPerTime} 位
+								</styledStaff.StyledStaffPurchaseButton>
+							</styledStaff.StyledStaffItem>
+						);
+					})}
 				</styledStaff.StyledStaffList>
 			</Box>
 			<Snackbar
