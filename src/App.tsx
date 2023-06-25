@@ -21,6 +21,16 @@ const OFFLINE_EARN_PERCENTAGE = 0.1;
 const stringToNumbers = (string: string, separator = ',') =>
 	string.split(separator).map(Number);
 
+const hireEmployeeNumberPerTimeByKey = (clickedKeys: Set<string>) => {
+	if (clickedKeys.has('Control')) {
+		return 100;
+	} else if (clickedKeys.has('Shift')) {
+		return 10;
+	} else {
+		return 1;
+	}
+};
+
 type Employee = { name: string; efficiency: number; price: number };
 // 數據截自 Clicker Heroes https://clickerheroes.fandom.com/wiki/Heroes
 const EMPLOYEES: Employee[] = [
@@ -41,14 +51,19 @@ function App() {
 		[]
 	);
 	const [offlineEarnedMoney, setOfflineEarnedMoney] = useState(0);
+	const [hireEmployeeNumberPerTime, setHireEmployeeNumberPerTime] = useState(1);
 
 	const manualEarn = (earnedMoney: number) =>
 		setMoney((prev) => prev + earnedMoney);
 
 	const hireEmployee = (employeeIndex: number) => {
 		const employee = EMPLOYEES[employeeIndex];
-		setMoney((prev) => prev - employee.price);
-		setHiredEmployeeIndexes((prev) => prev.concat(employeeIndex));
+		setMoney((prev) => prev - employee.price * hireEmployeeNumberPerTime);
+		setHiredEmployeeIndexes((prev) =>
+			prev.concat(
+				Array.from({ length: hireEmployeeNumberPerTime }, () => employeeIndex)
+			)
+		);
 	};
 
 	const closeOfflineEarnedMoneySnackbar = () => setOfflineEarnedMoney(0);
@@ -87,6 +102,34 @@ function App() {
 				}
 			}
 		}
+	}, []);
+
+	useEffect(() => {
+		const clickedKeys = new Set('');
+		const keydown = (e: KeyboardEvent) => {
+			switch (e.key) {
+				case 'Control':
+				case 'Shift':
+					clickedKeys.add(e.key);
+					break;
+			}
+			setHireEmployeeNumberPerTime(hireEmployeeNumberPerTimeByKey(clickedKeys));
+		};
+		const keyup = (e: KeyboardEvent) => {
+			switch (e.key) {
+				case 'Control':
+				case 'Shift':
+					clickedKeys.delete(e.key);
+					break;
+			}
+			setHireEmployeeNumberPerTime(hireEmployeeNumberPerTimeByKey(clickedKeys));
+		};
+		window.addEventListener('keydown', keydown);
+		window.addEventListener('keyup', keyup);
+		return () => {
+			window.removeEventListener('keydown', keydown);
+			window.removeEventListener('keyup', keyup);
+		};
 	}, []);
 
 	useEffect(() => {
@@ -153,10 +196,10 @@ function App() {
 							</Box>
 							<styledStaff.StyledStaffPurchaseButton
 								variant="outlined"
-								disabled={money < employee.price}
+								disabled={money < employee.price * hireEmployeeNumberPerTime}
 								onClick={() => hireEmployee(employeeIndex)}
 							>
-								雇用
+								雇用 {hireEmployeeNumberPerTime} 位
 							</styledStaff.StyledStaffPurchaseButton>
 						</styledStaff.StyledStaffItem>
 					))}
