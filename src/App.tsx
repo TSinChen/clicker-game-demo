@@ -16,13 +16,16 @@ const EMPLOYEES: Employee[] = [
 function App() {
 	const [money, setMoney] = useState(0);
 	const [earnPerSecond, setEarnPerSecond] = useState(BASIC_EARN);
-	const [hiredEmployees, setHiredEmployees] = useState<Employee[]>([]);
+	const [hiredEmployeeIndexes, setHiredEmployeeIndexes] = useState<number[]>(
+		[]
+	);
 
 	const manualEarn = (m: number) => setMoney((prev) => prev + m);
 
-	const hireEmployee = (employee: Employee) => {
+	const hireEmployee = (employeeIndex: number) => {
+		const employee = EMPLOYEES[employeeIndex];
 		setMoney((prev) => prev - employee.price);
-		setHiredEmployees((prev) => prev.concat(employee));
+		setHiredEmployeeIndexes((prev) => prev.concat(employeeIndex));
 	};
 
 	useEffect(() => {
@@ -38,12 +41,13 @@ function App() {
 	useEffect(() => {
 		setEarnPerSecond(
 			BASIC_EARN +
-				hiredEmployees.reduce(
-					(total, employee) => total + employee.efficiency,
-					0
-				)
+				hiredEmployeeIndexes.reduce((total, employeeIndex) => {
+					const employee = EMPLOYEES[employeeIndex];
+					return total + employee.efficiency;
+				}, 0)
 		);
-	}, [hiredEmployees]);
+	}, [hiredEmployeeIndexes]);
+		);
 
 	return (
 		<Box>
@@ -59,7 +63,7 @@ function App() {
 			<Box>
 				<Typography variant="h6">雇用勞工</Typography>
 				<styledStaff.StyledStaffList>
-					{EMPLOYEES.map((employee) => (
+					{EMPLOYEES.map((employee, employeeIndex) => (
 						<styledStaff.StyledStaffItem key={employee.name}>
 							<Box>{employee.name}</Box>
 							<Box>效率：{employee.efficiency}</Box>
@@ -67,15 +71,15 @@ function App() {
 							<Box>
 								現有數量：
 								{
-									hiredEmployees.filter(
-										(hiredEmployee) => hiredEmployee.name === employee.name
+									hiredEmployeeIndexes.filter(
+										(hiredEmployeeIndex) => hiredEmployeeIndex === employeeIndex
 									).length
 								}
 							</Box>
 							<styledStaff.StyledStaffPurchaseButton
 								variant="outlined"
 								disabled={money < employee.price}
-								onClick={() => hireEmployee(employee)}
+								onClick={() => hireEmployee(employeeIndex)}
 							>
 								雇用
 							</styledStaff.StyledStaffPurchaseButton>
