@@ -1,12 +1,25 @@
-import { Box, Button, Divider, Typography } from '@mui/material';
+import {
+	Alert,
+	Box,
+	Button,
+	Divider,
+	Snackbar,
+	Typography,
+} from '@mui/material';
 import { useEffect, useState } from 'react';
 import { styledStaff } from './styled';
+import dayjs from 'dayjs';
 
 const BASIC_EARN = 1;
 const LOCAL_STORAGE_KEYS = {
 	money: 'money',
 	hiredEmployeeIndexes: 'hiredEmployeeIndexes',
+	lastPlayedTime: 'lastPlayedTime',
 };
+const OFFLINE_EARN_PERCENTAGE = 0.1;
+
+const stringToNumbers = (string: string, separator = ',') =>
+	string.split(separator).map(Number);
 
 type Employee = { name: string; efficiency: number; price: number };
 // 數據截自 Clicker Heroes https://clickerheroes.fandom.com/wiki/Heroes
@@ -27,8 +40,10 @@ function App() {
 	const [hiredEmployeeIndexes, setHiredEmployeeIndexes] = useState<number[]>(
 		[]
 	);
+	const [offlineEarnedMoney, setOfflineEarnedMoney] = useState(0);
 
-	const manualEarn = (m: number) => setMoney((prev) => prev + m);
+	const manualEarn = (earnedMoney: number) =>
+		setMoney((prev) => prev + earnedMoney);
 
 	const hireEmployee = (employeeIndex: number) => {
 		const employee = EMPLOYEES[employeeIndex];
@@ -36,7 +51,18 @@ function App() {
 		setHiredEmployeeIndexes((prev) => prev.concat(employeeIndex));
 	};
 
+	const closeOfflineEarnedMoneySnackbar = () => setOfflineEarnedMoney(0);
+
+	const getEarnedMoneyPerSecondByIndexes = (indexes: number[]) =>
+		indexes.reduce((total, index) => {
+			const employee = EMPLOYEES[index];
+			return total + employee.efficiency;
+		}, 0);
+
 	useEffect(() => {
+		const storedLastPlayedTime = localStorage.getItem(
+			LOCAL_STORAGE_KEYS.lastPlayedTime
+		);
 		const storedMoney = localStorage.getItem(LOCAL_STORAGE_KEYS.money);
 		const storedHiredEmployeeIndexes = localStorage.getItem(
 			LOCAL_STORAGE_KEYS.hiredEmployeeIndexes
@@ -45,15 +71,35 @@ function App() {
 			setMoney(Number(storedMoney));
 		}
 		if (storedHiredEmployeeIndexes) {
-			setHiredEmployeeIndexes(
-				storedHiredEmployeeIndexes.split(',').map(Number)
-			);
+			setHiredEmployeeIndexes(stringToNumbers(storedHiredEmployeeIndexes));
+		}
+		if (storedMoney && storedHiredEmployeeIndexes) {
+			if (storedLastPlayedTime) {
+				const diff = dayjs().diff(dayjs(storedLastPlayedTime), 'second');
+				if (diff > 10) {
+					setOfflineEarnedMoney(
+						diff *
+							getEarnedMoneyPerSecondByIndexes(
+								stringToNumbers(storedHiredEmployeeIndexes)
+							) *
+							OFFLINE_EARN_PERCENTAGE
+					);
+				}
+			}
 		}
 	}, []);
 
 	useEffect(() => {
+		setMoney((prev) => prev + offlineEarnedMoney);
+	}, [offlineEarnedMoney]);
+
+	useEffect(() => {
 		const earn = setInterval(() => {
 			setMoney((prev) => prev + earnPerSecond);
+			localStorage.setItem(
+				LOCAL_STORAGE_KEYS.lastPlayedTime,
+				dayjs().toISOString()
+			);
 		}, 1000);
 
 		return () => {
@@ -63,11 +109,7 @@ function App() {
 
 	useEffect(() => {
 		setEarnPerSecond(
-			BASIC_EARN +
-				hiredEmployeeIndexes.reduce((total, employeeIndex) => {
-					const employee = EMPLOYEES[employeeIndex];
-					return total + employee.efficiency;
-				}, 0)
+			BASIC_EARN + getEarnedMoneyPerSecondByIndexes(hiredEmployeeIndexes)
 		);
 	}, [hiredEmployeeIndexes]);
 
@@ -120,6 +162,15 @@ function App() {
 					))}
 				</styledStaff.StyledStaffList>
 			</Box>
+			<Snackbar
+				open={Boolean(offlineEarnedMoney)}
+				autoHideDuration={3000}
+				onClose={closeOfflineEarnedMoneySnackbar}
+			>
+				<Alert severity="info" onClose={closeOfflineEarnedMoneySnackbar}>
+					離線時賺了 {offlineEarnedMoney} 元！
+				</Alert>
+			</Snackbar>
 		</Box>
 	);
 }
